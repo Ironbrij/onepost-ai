@@ -64,6 +64,7 @@ function OnePost() {
 
     try {
       const data = await generateContent({ data: { title, content, audience } });
+      console.log("generateContent result:", data);
       setOutputs(normalize(data));
       setProgress(100);
     } catch (err) {
