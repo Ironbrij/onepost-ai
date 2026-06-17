@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
-const WEBHOOK_URL = "";
+import { generateContent } from "@/lib/api/content.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,20 +28,6 @@ type Outputs = {
   newsletter: string;
   tweets: string[];
   videoScript: string;
-};
-
-const SAMPLE: Outputs = {
-  linkedin:
-    "Most teams treat distribution like an afterthought.\n\nThey spend weeks on a single piece of content, then post it once and move on.\n\nHere's the shift: write once, then reshape it for every channel where your audience already lives. One idea, five formats, ten times the reach.",
-  newsletter:
-    "Hey friend,\n\nThis week I've been thinking about how much great writing dies in a single tab. We pour hours into one post and let the rest of the internet shrug.\n\nSo I built a small habit: every long-form piece gets reshaped into a thread, a LinkedIn post, and a short video script before I close the doc. Same idea, more doors.\n\nTry it once this week. Reply and tell me what you remixed.\n\n— Sent with care",
-  tweets: [
-    "Write once. Publish everywhere.\n\nOne idea, reshaped for every channel where your audience actually shows up.",
-    "Most content doesn't fail because it's bad.\n\nIt fails because it only lives in one place.",
-    "The fastest growth hack in 2026 isn't a new platform.\n\nIt's remixing the work you already did.",
-  ],
-  videoScript:
-    "[Hook — 0:00]\nYou spent 6 hours writing that post. It got 200 views. Here's why.\n\n[Point — 0:08]\nOne idea, one format, one platform = one ceiling. The creators winning right now aren't writing more — they're remixing smarter.\n\n[Proof — 0:25]\nTake any long-form piece. Pull the sharpest line for a tweet. Turn the argument into a LinkedIn post. Read the intro out loud — that's your video hook.\n\n[CTA — 0:45]\nWrite once. Publish everywhere. Try it on your next post.",
 };
 
 function OnePost() {
@@ -77,19 +63,8 @@ function OnePost() {
     setOutputs(null);
 
     try {
-      if (WEBHOOK_URL) {
-        const res = await fetch(WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, content, audience }),
-        });
-        if (!res.ok) throw new Error(`Request failed (${res.status})`);
-        const data = await res.json();
-        setOutputs(normalize(data));
-      } else {
-        await new Promise((r) => setTimeout(r, 1400));
-        setOutputs(SAMPLE);
-      }
+      const data = await generateContent({ data: { title, content, audience } });
+      setOutputs(normalize(data));
       setProgress(100);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -135,6 +110,7 @@ function OnePost() {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                required
                 placeholder="e.g. The future of remote work"
                 className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
@@ -154,6 +130,7 @@ function OnePost() {
                 type="text"
                 value={audience}
                 onChange={(e) => setAudience(e.target.value)}
+                required
                 placeholder="e.g. Startup founders and product designers"
                 className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
