@@ -32,7 +32,6 @@ type Outputs = {
 
 function OnePost() {
   const [dark, setDark] = useState(false);
-  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [audience, setAudience] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,7 +62,7 @@ function OnePost() {
     setOutputs(null);
 
     try {
-      const data = await generateContent({ data: { title, content, audience } });
+      const data = await generateContent({ data: { content, audience } });
       console.log("generateContent result:", data);
       setOutputs(normalize(data));
       setProgress(100);
@@ -106,16 +105,6 @@ function OnePost() {
           className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8"
         >
           <div className="space-y-5">
-            <Field label="Content Title">
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                placeholder="e.g. The future of remote work"
-                className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </Field>
             <Field label="Long-form Content">
               <textarea
                 value={content}
