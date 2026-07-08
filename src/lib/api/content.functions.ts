@@ -11,7 +11,6 @@ import { z } from "zod";
 // that prefix would expose it to the client bundle.
 
 const inputSchema = z.object({
-  title: z.string().min(1, "Content title is required"),
   content: z.string().min(1, "Long-form content is required"),
   audience: z.string().min(1, "Target audience is required"),
 });
@@ -43,7 +42,6 @@ export const generateContent = createServerFn({ method: "POST" })
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        "Content Title": data.title,
         "Target Audience": data.audience,
         "Long-form Content": data.content,
       }),
