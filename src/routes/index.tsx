@@ -92,6 +92,22 @@ function OnePost() {
     }
   }
 
+  function handleStartOver() {
+    setContent("");
+    setAudience("");
+    setOutputs(null);
+    setError(null);
+  }
+
+  function handleSignOut() {
+    setContent("");
+    setAudience("");
+    setOutputs(null);
+    setError(null);
+    setRemaining(null);
+    signOut();
+  }
+
   if (authLoading || !user) {
     return <LoginScreen loading={authLoading} />;
   }
@@ -123,7 +139,7 @@ function OnePost() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => signOut()}>Sign out</AlertDialogAction>
+                  <AlertDialogAction onClick={handleSignOut}>Sign out</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -206,39 +222,52 @@ function OnePost() {
         </form>
 
         {outputs && (
-          <section className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2">
-            <OutputCard title="LinkedIn Post" text={outputs.linkedin} delay={0} />
-            <OutputCard title="Email Newsletter" text={outputs.newsletter} delay={150} />
-
-            <div
-              className="md:col-span-2 rounded-2xl border border-border bg-card p-6 opacity-0 animate-fade-in"
-              style={{ animationDelay: "300ms", animationFillMode: "forwards" }}
-            >
-              <div className="mb-5 flex items-center justify-between">
-                <Label>Tweets</Label>
-                <CopyButton text={outputs.tweets.join("\n\n---\n\n")} label="Copy all" />
-              </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {outputs.tweets.map((t, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col rounded-xl border border-border bg-background p-4"
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="font-display text-xs font-medium text-muted-foreground">
-                        Tweet {i + 1}
-                      </span>
-                      <CopyButton text={t} small />
-                    </div>
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                      {t}
-                    </p>
-                  </div>
-                ))}
-              </div>
+          <section className="mt-14">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="font-display text-lg font-semibold text-foreground">Your content</h2>
+              <button
+                type="button"
+                onClick={handleStartOver}
+                className="rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-primary"
+              >
+                Start over
+              </button>
             </div>
 
-            <OutputCard title="Video Script" text={outputs.videoScript} delay={450} fullWidth />
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <OutputCard title="LinkedIn Post" text={outputs.linkedin} delay={0} />
+              <OutputCard title="Email Newsletter" text={outputs.newsletter} delay={150} />
+
+              <div
+                className="md:col-span-2 rounded-2xl border border-border bg-card p-6 opacity-0 animate-fade-in"
+                style={{ animationDelay: "300ms", animationFillMode: "forwards" }}
+              >
+                <div className="mb-5 flex items-center justify-between">
+                  <Label>Tweets</Label>
+                  <CopyButton text={outputs.tweets.join("\n\n---\n\n")} label="Copy all" />
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {outputs.tweets.map((t, i) => (
+                    <div
+                      key={i}
+                      className="flex flex-col rounded-xl border border-border bg-background p-4"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="font-display text-xs font-medium text-muted-foreground">
+                          Tweet {i + 1}
+                        </span>
+                        <CopyButton text={t} small />
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                        {t}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <OutputCard title="Video Script" text={outputs.videoScript} delay={450} fullWidth />
+            </div>
           </section>
         )}
       </main>
