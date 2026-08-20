@@ -1,23 +1,16 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ironbrij-onepost-ai",
-  "main": ".output/server/index.mjs",
   "compatibility_date": "2026-08-20",
   "compatibility_flags": ["nodejs_compat"],
-  "no_bundle": true,
-  "rules": [
-    {
-      "type": "ESModule",
-      "globs": ["**/*.mjs", "**/*.js"]
-    }
-  ],
-  "assets": {
-    "binding": "ASSETS",
-    "directory": ".output/public"
-  },
   // Public Firebase Web SDK config — safe to commit, not secrets (see
   // .env.example). N8N_WEBHOOK_URL and any other real secrets must stay
   // as Cloudflare "Secret" vars in the dashboard, never here.
+  //
+  // main/assets/no_bundle/rules are deliberately omitted — Nitro
+  // regenerates those per-preset (cloudflare-module locally vs
+  // cloudflare-pages on Cloudflare's CF_PAGES=1 build machines) and
+  // stale hardcoded paths here would silently ship a broken worker.
   "vars": {
     "VITE_FIREBASE_API_KEY": "AIzaSyBW3hNLk1WWnXsrveGBqRSZIaAkV2pFzm8",
     "VITE_FIREBASE_AUTH_DOMAIN": "onepost-88a95.firebaseapp.com",
