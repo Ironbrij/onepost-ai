@@ -18,9 +18,17 @@ function firebaseErrorMessage(err: unknown): string {
       case "auth/invalid-email":
         return "Enter a valid email address.";
       case "auth/popup-closed-by-user":
+      case "auth/cancelled-popup-request":
         return "Sign-in was cancelled.";
+      case "auth/popup-blocked":
+        return "Your browser blocked the sign-in popup. Allow popups for this site and try again.";
+      case "auth/unauthorized-domain":
+        return "This site isn't authorized for sign-in yet. Add this domain in Firebase Console → Authentication → Settings → Authorized domains.";
+      case "auth/operation-not-allowed":
+        return "This sign-in method isn't enabled for this project yet.";
       default:
-        return "Something went wrong. Please try again.";
+        console.error("Unhandled Firebase auth error:", err.code, err);
+        return `Something went wrong (${err.code}). Please try again.`;
     }
   }
   return err instanceof Error ? err.message : "Something went wrong. Please try again.";
