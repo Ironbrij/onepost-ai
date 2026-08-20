@@ -1,9 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
-import { generateContent } from "@/lib/api/content.functions";
+import { generateContent, GENERATE_LIMIT } from "@/lib/api/content.functions";
 import { useAuth } from "@/hooks/useAuth";
-import { AuthPanel } from "@/components/AuthPanel";
+import { LoginScreen } from "@/components/LoginScreen";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,6 +52,7 @@ function OnePost() {
   const [progress, setProgress] = useState(0);
   const [outputs, setOutputs] = useState<Outputs | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -69,12 +81,19 @@ function OnePost() {
       const data = await generateContent({ data: { content, audience, idToken } });
       console.log("generateContent result:", data);
       setOutputs(normalize(data));
+      setRemaining(data.rateLimit.remaining);
       setProgress(100);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
+      if (message.includes("reached the limit")) setRemaining(0);
     } finally {
       setTimeout(() => setLoading(false), 250);
     }
+  }
+
+  if (authLoading || !user) {
+    return <LoginScreen loading={authLoading} />;
   }
 
   return (
@@ -82,20 +101,33 @@ function OnePost() {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Logo />
         <div className="flex items-center gap-3">
-          {user && (
-            <div className="flex items-center gap-2">
-              {user.email && (
-                <span className="hidden text-xs text-muted-foreground sm:inline">{user.email}</span>
-              )}
-              <button
-                type="button"
-                onClick={() => signOut()}
-                className="rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-primary"
-              >
-                Sign out
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {user.email && (
+              <span className="hidden text-xs text-muted-foreground sm:inline">{user.email}</span>
+            )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-primary"
+                >
+                  Sign out
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Sign out of OnePost?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You'll need to sign in again to generate more content.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => signOut()}>Sign out</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
           <button
             type="button"
             onClick={() => setDark((d) => !d)}
@@ -120,59 +152,58 @@ function OnePost() {
           </p>
         </section>
 
-        {authLoading ? (
-          <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
-            Loading…
-          </div>
-        ) : !user ? (
-          <AuthPanel />
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8"
-          >
-            <div className="space-y-5">
-              <Field label="Long-form Content">
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  required
-                  placeholder="Paste your article, essay, or notes here..."
-                  className="w-full resize-y rounded-lg border border-input bg-background px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  style={{ minHeight: 200 }}
-                />
-              </Field>
-              <Field label="Target Audience">
-                <input
-                  type="text"
-                  value={audience}
-                  onChange={(e) => setAudience(e.target.value)}
-                  required
-                  placeholder="e.g. Startup founders and product designers"
-                  className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-              </Field>
+        <form
+          onSubmit={handleSubmit}
+          className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8"
+        >
+          <div className="space-y-5">
+            <Field label="Long-form Content">
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                required
+                placeholder="Paste your article, essay, or notes here..."
+                className="w-full resize-y rounded-lg border border-input bg-background px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                style={{ minHeight: 200 }}
+              />
+            </Field>
+            <Field label="Target Audience">
+              <input
+                type="text"
+                value={audience}
+                onChange={(e) => setAudience(e.target.value)}
+                required
+                placeholder="e.g. Startup founders and product designers"
+                className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </Field>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="relative w-full overflow-hidden rounded-lg bg-primary px-6 py-3.5 font-display text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition hover:opacity-95 disabled:cursor-not-allowed"
-              >
-                <span className="relative z-10">
-                  {loading ? "Generating content…" : "Generate content"}
-                </span>
-                {loading && (
-                  <span
-                    className="absolute inset-y-0 left-0 progress-stripe transition-[width] duration-300"
-                    style={{ width: `${progress}%` }}
-                    aria-hidden
-                  />
-                )}
-              </button>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-            </div>
-          </form>
-        )}
+            <button
+              type="submit"
+              disabled={loading || remaining === 0}
+              className="relative w-full overflow-hidden rounded-lg bg-primary px-6 py-3.5 font-display text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--color-primary)_70%,transparent)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="relative z-10">
+                {loading ? "Generating content…" : "Generate content"}
+              </span>
+              {loading && (
+                <span
+                  className="absolute inset-y-0 left-0 progress-stripe transition-[width] duration-300"
+                  style={{ width: `${progress}%` }}
+                  aria-hidden
+                />
+              )}
+            </button>
+            <p className="text-center text-xs text-muted-foreground">
+              {remaining === null
+                ? `Up to ${GENERATE_LIMIT} generations per hour.`
+                : remaining > 0
+                  ? `${remaining} of ${GENERATE_LIMIT} generations left this hour.`
+                  : "You've used all your generations for this hour."}
+            </p>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+        </form>
 
         {outputs && (
           <section className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2">

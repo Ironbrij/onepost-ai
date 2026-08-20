@@ -10,6 +10,7 @@ type AuthContextValue = {
   signInWithEmail: (email: string, password: string) => Promise<User>;
   signUpWithEmail: (email: string, password: string) => Promise<User>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -64,6 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut: async () => {
       const mod = await loadFirebaseClient();
       await mod.signOut();
+    },
+    resetPassword: async (email) => {
+      const mod = await loadFirebaseClient();
+      await mod.resetPassword(email);
     },
   };
 

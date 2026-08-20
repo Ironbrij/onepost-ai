@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
 
+type Mode = "signin" | "signup";
+
 function firebaseErrorMessage(err: unknown): string {
   if (err && typeof err === "object" && "code" in err && typeof err.code === "string") {
     switch (err.code) {
@@ -24,13 +26,13 @@ function firebaseErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Something went wrong. Please try again.";
 }
 
-export function AuthPanel() {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+export function AuthPanel({ mode }: { mode: Mode }) {
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetStatus, setResetStatus] = useState<string | null>(null);
 
   async function handleGoogle() {
     setBusy(true);
@@ -48,6 +50,7 @@ export function AuthPanel() {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    setResetStatus(null);
     try {
       if (mode === "signin") {
         await signInWithEmail(email, password);
@@ -61,20 +64,35 @@ export function AuthPanel() {
     }
   }
 
+  async function handleForgotPassword() {
+    if (!email.trim()) {
+      setError("Enter your email above first, then click \"Forgot password?\"");
+      return;
+    }
+    setError(null);
+    setResetStatus(null);
+    try {
+      await resetPassword(email);
+      setResetStatus("Password reset email sent — check your inbox.");
+    } catch (err) {
+      setError(firebaseErrorMessage(err));
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-sm rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8">
-      <h2 className="font-display text-lg font-semibold text-foreground">
-        {mode === "signin" ? "Sign in to generate content" : "Create an account"}
+    <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
+      <h2 className="text-center font-display text-xl font-semibold text-foreground">
+        {mode === "signin" ? "Welcome back" : "Create your account"}
       </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Sign-in is required so we can keep generation fair and abuse-free for everyone.
+      <p className="mt-1 text-center text-sm text-muted-foreground">
+        {mode === "signin" ? "Sign in to your OnePost account" : "Get started with OnePost"}
       </p>
 
       <button
         type="button"
         onClick={handleGoogle}
         disabled={busy}
-        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
       >
         <GoogleIcon />
         Continue with Google
@@ -82,30 +100,49 @@ export function AuthPanel() {
 
       <div className="my-5 flex items-center gap-3">
         <div className="h-px flex-1 bg-border" />
-        <span className="text-xs text-muted-foreground">or</span>
+        <span className="text-xs text-muted-foreground">or continue with email</span>
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <form onSubmit={handleEmailSubmit} className="space-y-3">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          placeholder="you@example.com"
-          autoComplete="email"
-          className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-          placeholder="Password"
-          autoComplete={mode === "signin" ? "current-password" : "new-password"}
-          className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-        />
+      <form onSubmit={handleEmailSubmit} className="space-y-4">
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-foreground">Email address</span>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="you@example.com"
+            autoComplete="email"
+            className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </label>
+
+        <label className="block">
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground">Password</span>
+            {mode === "signin" && (
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Forgot password?
+              </button>
+            )}
+          </div>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            placeholder="Password"
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </label>
+
         <button
           type="submit"
           disabled={busy}
@@ -115,18 +152,10 @@ export function AuthPanel() {
         </button>
       </form>
 
-      {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
-
-      <button
-        type="button"
-        onClick={() => {
-          setMode((m) => (m === "signin" ? "signup" : "signin"));
-          setError(null);
-        }}
-        className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-primary"
-      >
-        {mode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
-      </button>
+      {error && <p className="mt-4 text-center text-sm text-destructive">{error}</p>}
+      {resetStatus && !error && (
+        <p className="mt-4 text-center text-sm text-muted-foreground">{resetStatus}</p>
+      )}
     </div>
   );
 }

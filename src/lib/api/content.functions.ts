@@ -13,7 +13,7 @@ import { checkRateLimit } from "../rate-limit.server";
 // Variables (Production AND Preview). Do NOT prefix it with VITE_ —
 // that prefix would expose it to the client bundle.
 
-const GENERATE_LIMIT = 5;
+export const GENERATE_LIMIT = 5;
 const GENERATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 const inputSchema = z.object({
@@ -88,5 +88,6 @@ export const generateContent = createServerFn({ method: "POST" })
         Boolean(t),
       ),
       videoScript: result.video_script ?? "",
+      rateLimit: { remaining: rateLimit.remaining, limit: GENERATE_LIMIT },
     };
   });
