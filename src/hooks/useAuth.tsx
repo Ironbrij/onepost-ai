@@ -24,13 +24,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
 
-    loadFirebaseClient().then(({ auth, onAuthStateChanged }) => {
-      if (cancelled) return;
-      unsubscribe = onAuthStateChanged(auth, (nextUser) => {
-        setUser(nextUser);
-        setLoading(false);
+    loadFirebaseClient()
+      .then(({ auth, onAuthStateChanged }) => {
+        if (cancelled) return;
+        unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+          setUser(nextUser);
+          setLoading(false);
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to load Firebase auth", error);
+        if (!cancelled) setLoading(false);
       });
-    });
 
     return () => {
       cancelled = true;
