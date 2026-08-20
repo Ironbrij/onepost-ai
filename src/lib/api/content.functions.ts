@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { verifyFirebaseIdToken } from "../auth.server";
-import { checkRateLimit } from "../rate-limit.server";
+import { checkRateLimit, peekRateLimit } from "../rate-limit.server";
 
 // Calls the n8n "Content Repurposing Engine" webhook server-side.
 // Why server-side instead of fetching from the browser:
@@ -21,6 +21,29 @@ const inputSchema = z.object({
   audience: z.string().min(1, "Target audience is required"),
   idToken: z.string().min(1, "Sign in is required"),
 });
+
+const statusInputSchema = z.object({
+  idToken: z.string().min(1, "Sign in is required"),
+});
+
+// Read-only status check so the UI can show the user's true current
+// standing (e.g. right after sign-in) without consuming a generation.
+export const getGenerationStatus = createServerFn({ method: "POST" })
+  .inputValidator(statusInputSchema)
+  .handler(async ({ data }) => {
+    let user: { uid: string };
+    try {
+      user = await verifyFirebaseIdToken(data.idToken);
+    } catch {
+      throw new Error("Your session has expired. Please sign in again.");
+    }
+
+    const rateLimit = peekRateLimit(user.uid, {
+      limit: GENERATE_LIMIT,
+      windowMs: GENERATE_WINDOW_MS,
+    });
+    return { remaining: rateLimit.remaining, limit: GENERATE_LIMIT };
+  });
 
 type N8nResponse = {
   linkedin_post?: string;

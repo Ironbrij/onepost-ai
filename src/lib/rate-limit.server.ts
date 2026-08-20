@@ -50,3 +50,23 @@ export function checkRateLimit(
   bucket.count += 1;
   return { allowed: true, remaining: limit - bucket.count, resetAt: bucket.resetAt };
 }
+
+// Read-only status check — does NOT consume from the bucket. Used to show
+// the user their current standing without counting as a generation.
+export function peekRateLimit(
+  key: string,
+  { limit, windowMs }: { limit: number; windowMs: number },
+): RateLimitResult {
+  const now = Date.now();
+  const bucket = buckets.get(key);
+
+  if (!bucket || bucket.resetAt <= now) {
+    return { allowed: true, remaining: limit, resetAt: now + windowMs };
+  }
+
+  return {
+    allowed: bucket.count < limit,
+    remaining: Math.max(0, limit - bucket.count),
+    resetAt: bucket.resetAt,
+  };
+}

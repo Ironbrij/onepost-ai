@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
-import { generateContent, GENERATE_LIMIT } from "@/lib/api/content.functions";
+import { generateContent, getGenerationStatus, GENERATE_LIMIT } from "@/lib/api/content.functions";
 import { useAuth } from "@/hooks/useAuth";
 import { LoginScreen } from "@/components/LoginScreen";
 import {
@@ -68,6 +68,24 @@ function OnePost() {
     }, 300);
     return () => clearInterval(id);
   }, [loading]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    user
+      .getIdToken()
+      .then((idToken) => getGenerationStatus({ data: { idToken } }))
+      .then((status) => {
+        if (!cancelled) setRemaining(status.remaining);
+      })
+      .catch(() => {
+        // Non-critical — the counter just falls back to "up to N per hour"
+        // until the next successful generation.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
