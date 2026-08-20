@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ironbrij-onepost-ai",
+  "main": ".output/server/index.mjs",
+  "compatibility_date": "2026-08-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "no_bundle": true,
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": ["**/*.mjs", "**/*.js"]
+    }
+  ],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".output/public"
+  },
+  // Public Firebase Web SDK config — safe to commit, not secrets (see
+  // .env.example). N8N_WEBHOOK_URL and any other real secrets must stay
+  // as Cloudflare "Secret" vars in the dashboard, never here.
+  "vars": {
+    "VITE_FIREBASE_API_KEY": "AIzaSyBW3hNLk1WWnXsrveGBqRSZIaAkV2pFzm8",
+    "VITE_FIREBASE_AUTH_DOMAIN": "onepost-88a95.firebaseapp.com",
+    "VITE_FIREBASE_PROJECT_ID": "onepost-88a95",
+    "VITE_FIREBASE_APP_ID": "1:1072065288085:web:60ce7fc1bae8e19b7a089c",
+    "FIREBASE_PROJECT_ID": "onepost-88a95"
+  }
+}
