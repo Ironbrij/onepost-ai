@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://universal-post-ai.lovable.app/sitemap.xml

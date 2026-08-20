@@ -1,0 +1,7 @@
+# OnePost
+
+> Write once. Publish everywhere. OnePost is a single-page AI tool that turns one piece of long-form content into a LinkedIn post, email newsletter, tweet thread, and video script — instantly.
+
+## Pages
+
+- [Home](/): Paste your content, choose your audience, and generate multi-format content ready to copy and publish across all your channels.
