@@ -1,44 +1,68 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createClientOnlyFn } from "@tanstack/react-start";
 
-import {
-  auth,
-  onAuthStateChanged,
-  signInWithGoogle,
-  signInWithEmail,
-  signUpWithEmail,
-  signOut,
-  type User,
-} from "@/lib/firebase.client";
+import type { User } from "@/lib/firebase.client";
 
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
-  signInWithGoogle: typeof signInWithGoogle;
-  signInWithEmail: typeof signInWithEmail;
-  signUpWithEmail: typeof signUpWithEmail;
-  signOut: typeof signOut;
+  signInWithGoogle: () => Promise<User>;
+  signInWithEmail: (email: string, password: string) => Promise<User>;
+  signUpWithEmail: (email: string, password: string) => Promise<User>;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const loadFirebaseClient = createClientOnlyFn(() => import("@/lib/firebase.client"));
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, (nextUser) => {
-      setUser(nextUser);
-      setLoading(false);
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+
+    loadFirebaseClient().then(({ auth, onAuthStateChanged }) => {
+      if (cancelled) return;
+      unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+        setUser(nextUser);
+        setLoading(false);
+      });
     });
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{ user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value: AuthContextValue = {
+    user,
+    loading,
+    signInWithGoogle: async () => {
+      const mod = await loadFirebaseClient();
+      const credential = await mod.signInWithGoogle();
+      return credential.user;
+    },
+    signInWithEmail: async (email, password) => {
+      const mod = await loadFirebaseClient();
+      const credential = await mod.signInWithEmail(email, password);
+      return credential.user;
+    },
+    signUpWithEmail: async (email, password) => {
+      const mod = await loadFirebaseClient();
+      const credential = await mod.signUpWithEmail(email, password);
+      return credential.user;
+    },
+    signOut: async () => {
+      const mod = await loadFirebaseClient();
+      await mod.signOut();
+    },
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
