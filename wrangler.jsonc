@@ -3,19 +3,18 @@
   "name": "ironbrij-onepost-ai",
   "compatibility_date": "2026-08-20",
   "compatibility_flags": ["nodejs_compat"],
-  // Public Firebase Web SDK config — safe to commit, not secrets (see
-  // .env.example). N8N_WEBHOOK_URL and any other real secrets must stay
-  // as Cloudflare "Secret" vars in the dashboard, never here.
-  //
   // main/assets/no_bundle/rules are deliberately omitted — Nitro
   // regenerates those per-preset (cloudflare-module locally vs
   // cloudflare-pages on Cloudflare's CF_PAGES=1 build machines) and
   // stale hardcoded paths here would silently ship a broken worker.
+  //
+  // VITE_FIREBASE_* are NOT listed here: they're only read via
+  // import.meta.env at build time (baked into the client bundle), never
+  // via process.env at Worker runtime, and are already provided as
+  // build-time Secrets in the Cloudflare dashboard. Duplicating them
+  // here creates a runtime binding with the same name and Cloudflare
+  // refuses to deploy ("Binding name ... already in use").
   "vars": {
-    "VITE_FIREBASE_API_KEY": "AIzaSyBW3hNLk1WWnXsrveGBqRSZIaAkV2pFzm8",
-    "VITE_FIREBASE_AUTH_DOMAIN": "onepost-88a95.firebaseapp.com",
-    "VITE_FIREBASE_PROJECT_ID": "onepost-88a95",
-    "VITE_FIREBASE_APP_ID": "1:1072065288085:web:60ce7fc1bae8e19b7a089c",
     "FIREBASE_PROJECT_ID": "onepost-88a95"
   }
 }
